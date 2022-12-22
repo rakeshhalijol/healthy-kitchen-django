@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+{{ get_added_product.0.product.product_name }} cart
+{% endblock %}
+
+{% block body %}
+{% if count == 0 %}
+<div class="card text-center">
+  <div class="card-body">
+    <img src="{% static 'sad.jpg' %}" height="80rem">
+    <h5 class="card-title">Your Cart is Empty...</h5>
+    <p class="card-text">Don't miss out great deals.</p>
+    <a href="/" class="btn btn-primary">Shop Now</a>
+  </div>
+</div>
+
+{% else %}
+  {% for cart_product in get_added_product %}
+<div class="card mb-3" style="max-width: 100vw;">
+  <div class="row g-0">
+    <div class="col-md-4">
+      <img src="/media/{{ cart_product.product.product_image }}" class="img-fluid rounded-start" alt="could't load">
+    </div>
+    <div class="col-md-8">
+      <div class="card-body">
+        <h5 class="card-title">{{ cart_product.product.product_name }}</h5>
+        <p class="card-text">{{ cart_product.product.product_desc }}</p>
+        <form method="post" action="/update_cart/{{ cart_product.id }}/">{% csrf_token %}
+          <input type="number" id="qty" name="qty" style="margin:1rem;" placeholder="Qty" value="{{ cart_product.quantity }}">
+          <button id="update" type="submit" class="btn btn-warning">Update</button>
+        </form>
+        <h2 style="color:green;">₹{{ cart_product.price }}/-</h2>
+        <a href="/update_cart/{{ cart_product.id }}r/"><button type="button" class="btn btn-success">remove</button></a>
+        <a href="#"><button type="button" class="btn btn-danger">Buy Now</button></a>
+        <p class="card-text"><small class="text-muted">Last updated {{ cart_product.added_time }} mins ago</small></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endfor %}
+{% endif %}
+
+
+
+
+
+{% endblock %}

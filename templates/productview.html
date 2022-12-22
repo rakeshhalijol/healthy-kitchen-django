@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ get_clicked_product.product_name }} view
+{% endblock %}
+
+{% block css %}
+#pricecolor{color:green;
+}
+
+.incbtn{
+font-size:1.5em;
+
+}
+.reviews{
+
+margin:3rem;
+}
+#review{
+padding:1rem;
+font-size:1rem;
+width:70vw;
+border:none;
+border-bottom:1px solid grey;
+margin:1rem;
+}
+#comment{
+  padding:.5rem;
+  font-size:1rem;
+  border-redius:2rem;
+}
+{% endblock %}
+
+{% block body %}
+<div class="container">
+  <div class="row">
+    <div class="col">
+      {% if get_clicked_product.product_offer %}
+      <span class="badge bg-success">On offer</span>
+      {% endif %}
+      <img src="/media/{{ get_clicked_product.product_image }}" alt="Couldn't load image" id="i1" height="300em">
+    </div>
+    <div class="col">
+      <h1>{{ get_clicked_product.product_name }}</h1>
+      <h2 id="pricecolor">₹{{ get_clicked_product.product_price }}/-</h2>
+      <p>{{ get_clicked_product.product_desc }}.</p>
+      <h4>{{ get_clicked_product.product_name }}</h4>
+      <p>{{ get_clicked_product.product_category }}</p>
+
+    </div>
+  </div>
+</div>
+
+<form method="post" action="/cart/">{% csrf_token %}
+  <input name="hid" type="text" value="{{ get_clicked_product.id }}" hidden>
+  <div class="container">
+  <div class="row">
+    <div class="col">
+      <div class="d-grid gap-2">
+          <button class="btn btn-light border incbtn" type="submit">Add to cart</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="d-grid gap-2">
+          <button class="btn btn-success incbtn" type="button">Buy Now</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</form>
+<div class="reviews">
+  <input type="text" id="review" placeholder="Add a public review"><a><input id="comment" type="submit" value="Comment"> </a>
+</div>
+<div class="card-footer text-muted">
+    <i id="like" class="fa fa-thumbs-up" style="color:grey;margin-right:47rem;margin-left:15rem">good one?</i>
+      <input type="number" id="lh" hidden value="0">
+    <i id="dislike"class="fa fa-thumbs-down" style="color:grey;">bad one?</i>
+      <input type="number" id="dlh" hidden value="0">
+  </div><br>
+<div id="userreview">
+  {% for reviews in get_reviews %}
+  <div class="card" style="margin:2rem;">
+      <h5 class="card-header">{{ reviews.user.username }}</h5>
+      <div class="card-body">
+    <!--    <h5 class="card-title">Special title treatment</h5>-->
+        <p class="card-text">{{ reviews.review }}.</p>
+      </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+<script>
+var roomname = "productview_{{ get_clicked_product.id }}";
+var check = false;
+var ws = new WebSocket('ws://localhost:8000/ws/productview/{{ get_clicked_product.id }}/');
+  var l = document.getElementById("like");
+  var dl = document.getElementById("dislike");
+  var lhidden = document.getElementById("lh");
+  var dlhidden = document.getElementById("dlh");
+  l.addEventListener("click", function(){
+      if(check === false)
+        dl.style.color = "grey";
+      l.style.color = "blue";
+      check = true;
+
+      ws.send(JSON.stringify({
+          "command":"like",
+          "like":"yes",
+          "user":"{{ user }}",
+          "roomname":roomname,
+          "product": {{ get_clicked_product.id }}
+
+      }));
+   });
+   dl.addEventListener("click", function(){
+      if(check === true)
+        l.style.color = "grey";
+      dl.style.color = "blue";
+      check = false;
+   });
+
+   ws.addEventListener('open',() =>{
+      console.log("Connection established from js");
+      ws.send(JSON.stringify({
+        'command':'open',
+        'roomname':roomname,
+        'product':'{{ get_clicked_product.id }}'
+    }));
+
+   })
+   var cmtbtn = document.getElementById("comment");
+   cmtbtn.addEventListener("click", function(){
+      var get_review = document.getElementById("review").value;
+      ws.send(JSON.stringify({
+          'command':'send',
+          'user':'{{ user }}',
+          'review':get_review,
+          'roomname':roomname,
+          'product':'{{ get_clicked_product.id }}'
+      }));
+
+   })
+
+   ws.onmessage = (e) => {
+      console.log(e);
+      var data1 = JSON.parse(e.data);
+      var get_review_body = document.getElementById("userreview");
+      get_review_body.innerHTML += `  <div class="card" style="margin:2rem;">
+      <h5 class="card-header">${data1.user}</h5>
+      <div class="card-body">
+    <!--    <h5 class="card-title">Special title treatment</h5>-->
+        <p class="card-text">${data1.review}</p>
+      </div>
+  </div>`;
+
+
+   }
+
+</script>
+
+{% endblock %}
